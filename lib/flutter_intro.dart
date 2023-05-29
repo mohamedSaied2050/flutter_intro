@@ -72,7 +72,7 @@ class Intro {
   final Widget Function(StepWidgetParams params) widgetBuilder;
 
   /// [Widget] [padding] of the selected area, the default is [EdgeInsets.all(8)]
-  final EdgeInsets padding;
+  final EdgeInsetsDirectional padding;
 
   /// [Widget] [borderRadius] of the selected area, the default is [BorderRadius.all(Radius.circular(4))]
   final BorderRadiusGeometry borderRadius;
@@ -92,11 +92,11 @@ class Intro {
     this.noAnimation = false,
     this.maskClosable = false,
     this.borderRadius = const BorderRadius.all(Radius.circular(4)),
-    this.padding = const EdgeInsets.all(8),
+    this.padding = const EdgeInsetsDirectional.all(8),
     this.onHighlightWidgetTap,
   }) : assert(stepCount > 0) {
     _animationDuration =
-        noAnimation ? Duration(milliseconds: 0) : Duration(milliseconds: 300);
+    noAnimation ? Duration(milliseconds: 0) : Duration(milliseconds: 300);
     for (int i = 0; i < stepCount; i++) {
       _globalKeys.add(GlobalKey());
       _configMap.add({});
@@ -111,10 +111,10 @@ class Intro {
   /// [padding] Padding setting
   /// [borderRadius] BorderRadius setting
   void setStepConfig(
-    int stepIndex, {
-    EdgeInsets? padding,
-    BorderRadiusGeometry? borderRadius,
-  }) {
+      int stepIndex, {
+        EdgeInsetsDirectional? padding,
+        BorderRadiusGeometry? borderRadius,
+      }) {
     assert(stepIndex >= 0 && stepIndex < stepCount);
     _configMap[stepIndex] = {
       'padding': padding,
@@ -128,10 +128,10 @@ class Intro {
   /// [padding] Padding setting
   /// [borderRadius] BorderRadius setting
   void setStepsConfig(
-    List<int> stepsIndex, {
-    EdgeInsets? padding,
-    BorderRadiusGeometry? borderRadius,
-  }) {
+      List<int> stepsIndex, {
+        EdgeInsetsDirectional? padding,
+        BorderRadiusGeometry? borderRadius,
+      }) {
     assert(stepsIndex
         .every((stepIndex) => stepIndex >= 0 && stepIndex < stepCount));
     stepsIndex.forEach((index) {
@@ -147,20 +147,21 @@ class Intro {
     if (globalKey.currentContext == null) {
       throw FlutterIntroException(
         'The current context is null, because there is no widget in the tree that matches this global key.'
-        ' Please check whether the globalKey in intro.keys has forgotten to bind.',
+            ' Please check whether the globalKey in intro.keys has forgotten to bind.',
       );
     }
 
-    EdgeInsets? currentConfig = _configMap[_currentStepIndex]['padding'];
+    EdgeInsetsDirectional? currentConfig =
+    _configMap[_currentStepIndex]['padding'];
     RenderBox renderBox =
-        globalKey.currentContext!.findRenderObject() as RenderBox;
+    globalKey.currentContext!.findRenderObject() as RenderBox;
     _widgetWidth = renderBox.size.width +
         (currentConfig?.horizontal ?? padding.horizontal);
     _widgetHeight =
         renderBox.size.height + (currentConfig?.vertical ?? padding.vertical);
     _widgetOffset = Offset(
       renderBox.localToGlobal(Offset.zero).dx -
-          (currentConfig?.left ?? padding.left),
+          (currentConfig?.end ?? padding.end),
       renderBox.localToGlobal(Offset.zero).dy -
           (currentConfig?.top ?? padding.top),
     );
@@ -170,10 +171,10 @@ class Intro {
     double? width,
     double? height,
     BlendMode? backgroundBlendMode,
-    required double left,
+    required double end,
     required double top,
     double? bottom,
-    double? right,
+    double? start,
     BorderRadiusGeometry? borderRadiusGeometry,
     Widget? child,
     VoidCallback? onTap,
@@ -183,7 +184,7 @@ class Intro {
       backgroundBlendMode: backgroundBlendMode,
       borderRadius: borderRadiusGeometry,
     );
-    return AnimatedPositioned(
+    return AnimatedPositionedDirectional(
       duration: _animationDuration,
       child: GestureDetector(
         onTap: onTap,
@@ -196,17 +197,17 @@ class Intro {
           duration: _animationDuration,
         ),
       ),
-      left: left,
+      end: end,
       top: top,
       bottom: bottom,
-      right: right,
+      start: start,
     );
   }
 
   void _showOverlay(
-    BuildContext context,
-    GlobalKey globalKey,
-  ) {
+      BuildContext context,
+      GlobalKey globalKey,
+      ) {
     _overlayEntry = new OverlayEntry(
       builder: (BuildContext context) {
         Size screenSize = MediaQuery.of(context).size;
@@ -237,37 +238,37 @@ class Intro {
                     children: [
                       _widgetBuilder(
                         backgroundBlendMode: BlendMode.dstOut,
-                        left: 0,
+                        end: 0,
                         top: 0,
-                        right: 0,
+                        start: 0,
                         bottom: 0,
                         onTap: maskClosable
                             ? () {
-                                if (stepCount - 1 == _currentStepIndex) {
-                                  _onFinish();
-                                } else {
-                                  _onNext(context);
-                                }
-                              }
+                          if (stepCount - 1 == _currentStepIndex) {
+                            _onFinish();
+                          } else {
+                            _onNext(context);
+                          }
+                        }
                             : null,
                       ),
                       _widgetBuilder(
                         width: _widgetWidth,
                         height: _widgetHeight,
-                        left: _widgetOffset!.dx,
+                        end: _widgetOffset!.dx,
                         top: _widgetOffset!.dy,
                         // Skipping through the intro very fast may cause currentStepIndex to out of bounds
                         // I have tried to fix it, here is just to make the code safer
                         // https://github.com/tal-tech/flutter_intro/issues/22
                         borderRadiusGeometry: _currentStepIndex < stepCount
                             ? _configMap[_currentStepIndex]['borderRadius'] ??
-                                borderRadius
+                            borderRadius
                             : borderRadius,
                         onTap: onHighlightWidgetTap != null
                             ? () {
-                                IntroStatus introStatus = getStatus();
-                                onHighlightWidgetTap!(introStatus);
-                              }
+                          IntroStatus introStatus = getStatus();
+                          onHighlightWidgetTap!(introStatus);
+                        }
                             : null,
                       ),
                     ],
@@ -322,13 +323,13 @@ class Intro {
       onNext: _currentStepIndex == stepCount - 1
           ? null
           : () {
-              _onNext(context);
-            },
+        _onNext(context);
+      },
       onPrev: _currentStepIndex == 0
           ? null
           : () {
-              _onPrev(context);
-            },
+        _onPrev(context);
+      },
       offset: _widgetOffset,
       currentStepIndex: _currentStepIndex,
       stepCount: stepCount,
